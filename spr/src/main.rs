@@ -126,7 +126,10 @@ pub async fn spr() -> Result<()> {
     let github_master_branch = git_config
         .get_string("spr.githubMasterBranch")
         .unwrap_or_else(|_| "master".to_string());
-    let branch_prefix = git_config.get_string("spr.branchPrefix")?;
+    let branch_prefix = cli
+        .branch_prefix
+        .map_or_else(|| git_config.get_string("spr.branchPrefix"), Ok)
+        .map_err(|e| Error::new(format!("spr.branchPrefix must be configured: {e:?}")))?;
     let require_approval = git_config
         .get_bool("spr.requireApproval")
         .ok()
