@@ -38,6 +38,11 @@ pub struct Cli {
     #[clap(long)]
     github_repository: Option<String>,
 
+    /// The name of the centrally shared branch into which the pull requests are merged
+    /// (if not given taken from config spr.githubMasterBranch, or default "master")
+    #[clap(long)]
+    github_master_branch: Option<String>,
+
     /// prefix to be used for branches created for pull requests (if not given
     /// taken from git config spr.branchPrefix, defaulting to
     /// 'spr/<GITHUB_USERNAME>/')
@@ -123,8 +128,9 @@ pub async fn spr() -> Result<()> {
     let github_remote_name = git_config
         .get_string("spr.githubRemoteName")
         .unwrap_or_else(|_| "origin".to_string());
-    let github_master_branch = git_config
-        .get_string("spr.githubMasterBranch")
+    let github_master_branch = cli
+        .github_master_branch
+        .map_or_else(|| git_config.get_string("spr.githubMasterBranch"), Ok)
         .unwrap_or_else(|_| "master".to_string());
     let branch_prefix = cli
         .branch_prefix
@@ -160,7 +166,11 @@ pub async fn spr() -> Result<()> {
         None => git_config.get_string("spr.githubAuthToken"),
     }?;
 
-    octocrab::initialise(octocrab::Octocrab::builder().personal_token(github_auth_token.clone()).build()?);
+    octocrab::initialise(
+        octocrab::Octocrab::builder()
+            .personal_token(github_auth_token.clone())
+            .build()?,
+    );
 
     let mut headers = header::HeaderMap::new();
     headers.insert(header::ACCEPT, "application/json".parse()?);
