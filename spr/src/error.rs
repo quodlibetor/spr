@@ -46,9 +46,17 @@ where
     E: std::error::Error,
 {
     fn from(error: E) -> Self {
-        Self {
-            messages: vec![format!("{}", error)],
+        let mut e: &dyn std::error::Error = &error;
+        let mut messages = vec![e.to_string()];
+        while let Some(err) = e.source() {
+            // octocrab github error sometimes makes itself the source?
+            if std::ptr::eq(err as *const _, e as *const _) {
+                break;
+            }
+            e = err;
+            messages.push(e.to_string());
         }
+        Self { messages }
     }
 }
 
