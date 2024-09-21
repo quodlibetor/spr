@@ -93,6 +93,8 @@ pub enum OptionsError {
 pub async fn spr() -> Result<()> {
     let cli = Cli::parse();
 
+    tracing_subscriber::fmt::init();
+
     if let Some(path) = &cli.cd {
         if let Err(err) = std::env::set_current_dir(path) {
             eprintln!("Could not change directory to {:?}", &path);
