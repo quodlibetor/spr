@@ -130,14 +130,8 @@ type GitObjectID = String;
 pub struct PullRequestMergeabilityQuery;
 
 impl GitHub {
-    pub fn new(
-        config: crate::config::Config,
-        git: crate::git::Git,
-    ) -> Self {
-        Self {
-            config,
-            git,
-        }
+    pub fn new(config: crate::config::Config, git: crate::git::Git) -> Self {
+        Self { config, git }
     }
 
     pub async fn get_github_user(login: String) -> Result<UserWithName> {
@@ -159,10 +153,7 @@ impl GitHub {
     }
 
     pub async fn get_pull_request(self, number: u64) -> Result<PullRequest> {
-        let GitHub {
-            config,
-            git,
-        } = self;
+        let GitHub { config, git } = self;
 
         let variables = pull_request_query::Variables {
             name: config.repo.clone(),
@@ -226,7 +217,9 @@ impl GitHub {
                 let user_name = review.author.as_ref()?.login.clone();
                 let status = match review.state {
                     pull_request_query::PullRequestReviewState::APPROVED => ReviewStatus::Approved,
-                    pull_request_query::PullRequestReviewState::CHANGES_REQUESTED => ReviewStatus::Rejected,
+                    pull_request_query::PullRequestReviewState::CHANGES_REQUESTED => {
+                        ReviewStatus::Rejected
+                    }
                     _ => ReviewStatus::Requested,
                 };
                 Some((user_name, status))
@@ -234,9 +227,15 @@ impl GitHub {
             .collect();
 
         let review_status = match pr.review_decision {
-            Some(pull_request_query::PullRequestReviewDecision::APPROVED) => Some(ReviewStatus::Approved),
-            Some(pull_request_query::PullRequestReviewDecision::CHANGES_REQUESTED) => Some(ReviewStatus::Rejected),
-            Some(pull_request_query::PullRequestReviewDecision::REVIEW_REQUIRED) => Some(ReviewStatus::Requested),
+            Some(pull_request_query::PullRequestReviewDecision::APPROVED) => {
+                Some(ReviewStatus::Approved)
+            }
+            Some(pull_request_query::PullRequestReviewDecision::CHANGES_REQUESTED) => {
+                Some(ReviewStatus::Rejected)
+            }
+            Some(pull_request_query::PullRequestReviewDecision::REVIEW_REQUIRED) => {
+                Some(ReviewStatus::Requested)
+            }
             _ => None,
         };
 
@@ -421,8 +420,8 @@ impl GitHub {
                 _ => None,
             },
             merge_commit: pr
-            .merge_commit
-            .and_then(|sha| git2::Oid::from_str(&sha.oid).ok()),
+                .merge_commit
+                .and_then(|sha| git2::Oid::from_str(&sha.oid).ok()),
         })
     }
 }

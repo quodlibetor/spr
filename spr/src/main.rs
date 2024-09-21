@@ -84,9 +84,7 @@ enum Commands {
 
 #[derive(Debug, thiserror::Error)]
 pub enum OptionsError {
-    #[error(
-        "GitHub repository must be given as 'OWNER/REPO', but given value was '{0}'"
-    )]
+    #[error("GitHub repository must be given as 'OWNER/REPO', but given value was '{0}'")]
     InvalidRepository(String),
 }
 
@@ -137,7 +135,9 @@ pub async fn spr() -> Result<()> {
     let branch_prefix = cli
         .branch_prefix
         .map_or_else(|| git_config.get_string("spr.branchPrefix"), Ok)
-        .map_err(|e| Error::new(format!("spr.branchPrefix must be configured: {e:?}")))?;
+        .map_err(|e| {
+            Error::new(format!("spr.branchPrefix must be configured: {e:?}"))
+        })?;
     let require_approval = git_config
         .get_bool("spr.requireApproval")
         .ok()
@@ -185,10 +185,7 @@ pub async fn spr() -> Result<()> {
         format!("Bearer {}", github_auth_token).parse()?,
     );
 
-    let mut gh = spr::github::GitHub::new(
-        config.clone(),
-        git.clone(),
-    );
+    let mut gh = spr::github::GitHub::new(config.clone(), git.clone());
 
     match cli.command {
         Commands::Diff(opts) => {

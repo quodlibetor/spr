@@ -225,7 +225,9 @@ fn validate_branch_prefix(branch_prefix: &str) -> Result<()> {
     }
 
     if branch_prefix.contains("//") || branch_prefix.starts_with('/') {
-        return Err(Error::new("Branch prefix contains multiple consecutive slashes or starts with slash."));
+        return Err(Error::new(
+            "Branch prefix contains multiple consecutive slashes or starts with slash.",
+        ));
     }
 
     if branch_prefix.contains("@{") {

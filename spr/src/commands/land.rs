@@ -275,10 +275,10 @@ pub async fn land(
 
                 if git.get_tree_oid_for_commit(merge_commit)? != our_tree_oid {
                     return Err(Error::new(formatdoc!(
-                    "This commit has been updated and/or rebased since the pull
+                        "This commit has been updated and/or rebased since the pull
                      request was last updated. Please run `spr diff` to update the pull
                      request and then try `spr land` again!"
-                )));
+                    )));
                 }
             };
 
