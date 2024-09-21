@@ -170,9 +170,10 @@ impl GitHub {
             number: number as i64,
         };
         let request_body = PullRequestQuery::build_query(variables);
-        let response_body: Response<pull_request_query::ResponseData> = octocrab::instance()
-            .post("graphql", Some(&request_body))
-            .await?;
+        let response_body: Response<pull_request_query::ResponseData> =
+            octocrab::instance()
+                .post(config.graphql_path(), Some(&request_body))
+                .await?;
 
         if let Some(errors) = response_body.errors {
             let error =
@@ -346,10 +347,10 @@ impl GitHub {
     ) -> Result<()> {
         octocrab::instance()
             .patch::<octocrab::models::pulls::PullRequest, _, _>(
-                format!(
+                self.config.rest_path(&format!(
                     "repos/{}/{}/pulls/{}",
                     self.config.owner, self.config.repo, number
-                ),
+                )),
                 Some(&updates),
             )
             .await?;
@@ -366,10 +367,10 @@ impl GitHub {
         struct Ignore {}
         let _: Ignore = octocrab::instance()
             .post(
-                format!(
+                self.config.rest_path(&format!(
                     "repos/{}/{}/pulls/{}/requested_reviewers",
                     self.config.owner, self.config.repo, number
-                ),
+                )),
                 Some(&reviewers),
             )
             .await?;
@@ -387,10 +388,11 @@ impl GitHub {
             number: number as i64,
         };
         let request_body = PullRequestMergeabilityQuery::build_query(variables);
-        let response_body: Response<pull_request_mergeability_query::ResponseData> =
-            octocrab::instance()
-                .post("graphql", Some(&request_body))
-                .await?;
+        let response_body: Response<
+            pull_request_mergeability_query::ResponseData,
+        > = octocrab::instance()
+            .post(self.config.graphql_path(), Some(&request_body))
+            .await?;
 
         if let Some(errors) = response_body.errors {
             let error = Err(Error::new(format!(

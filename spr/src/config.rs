@@ -7,6 +7,8 @@
 
 use std::collections::HashSet;
 
+use tracing::trace;
+
 use crate::{error::Result, github::GitHubBranch, utils::slugify};
 
 #[derive(Clone, Debug)]
@@ -18,6 +20,7 @@ pub struct Config {
     pub branch_prefix: String,
     pub require_approval: bool,
     pub require_test_plan: bool,
+    pub github_api_base: String,
 }
 
 impl Config {
@@ -43,6 +46,7 @@ impl Config {
             branch_prefix,
             require_approval,
             require_test_plan,
+            github_api_base: "https://api.github.com".to_string(),
         }
     }
 
@@ -52,6 +56,19 @@ impl Config {
             owner = &self.owner,
             repo = &self.repo
         )
+    }
+
+    /// Join "path" with the api base
+    pub fn rest_path(&self, path: &str) -> String {
+        trace!(%path, "loading rest path");
+        let b = &self.github_api_base;
+        format!("{b}/{path}")
+    }
+
+    pub fn graphql_path(&self) -> String {
+        trace!("loading graphql path");
+        let b = &self.github_api_base;
+        format!("{b}/graphql")
     }
 
     pub fn parse_pull_request_field(&self, text: &str) -> Option<u64> {
