@@ -19,6 +19,7 @@ pub struct Config {
     pub master_ref: GitHubBranch,
     pub branch_prefix: String,
     pub require_approval: bool,
+    pub include_reviewed_by: bool,
     pub require_test_plan: bool,
     pub github_api_base: String,
 }
@@ -47,6 +48,7 @@ impl Config {
             require_approval,
             require_test_plan,
             github_api_base: "https://api.github.com".to_string(),
+            include_reviewed_by: false,
         }
     }
 

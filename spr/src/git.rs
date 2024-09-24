@@ -16,7 +16,7 @@ use crate::{
     },
     utils::run_command,
 };
-use git2::Oid;
+use git2::{Oid, Repository};
 
 #[derive(Debug)]
 pub struct PreparedCommit {
@@ -44,7 +44,13 @@ impl Git {
     }
 
     pub fn repo(&self) -> std::sync::MutexGuard<git2::Repository> {
-        self.repo.lock().expect("poisoned mutex")
+        match self.repo.try_lock() {
+            Ok(repo) => repo,
+            Err(std::sync::TryLockError::WouldBlock) => panic!("DEADLOCK"),
+            Err(std::sync::TryLockError::Poisoned(_)) => {
+                panic!("poisoned mutex")
+            }
+        }
     }
 
     fn hooks(&self) -> std::sync::MutexGuard<git2_ext::hooks::Hooks> {
@@ -230,13 +236,14 @@ impl Git {
     }
 
     pub fn resolve_reference(&self, reference: &str) -> Result<Oid> {
-        let result = self
-            .repo()
-            .find_reference(reference)?
-            .peel_to_commit()?
-            .id();
-
-        Ok(result)
+        self.resolve_reference_with(reference, &self.repo())
+    }
+    pub fn resolve_reference_with(
+        &self,
+        reference: &str,
+        repo: &Repository,
+    ) -> Result<Oid> {
+        Ok(repo.find_reference(reference)?.peel_to_commit()?.id())
     }
 
     pub async fn fetch_commits_from_remote(
@@ -316,6 +323,29 @@ impl Git {
 
         let short_id =
             commit.as_object().short_id()?.as_str().unwrap().to_string();
+
+
+        // check if parent is included in the history of the master branch
+        let master_oid =
+            self.resolve_reference_with(config.master_ref.local(), &repo)?;
+        let parent_is_merged = self.is_ancestor_with(parent_oid, master_oid, &repo)?;
+
+        // get the parent commit's message
+        let mut parent_pr = None;
+        if !parent_is_merged {
+            let parent_commit = repo.find_commit(parent_oid)?;
+            let parent_message =
+                String::from_utf8_lossy(parent_commit.message_bytes())
+                    .into_owned();
+            let parent_sections =
+                parse_message(&parent_message, MessageSection::Title);
+            if let Some(pr_url) =
+                parent_sections.get(&MessageSection::PullRequest)
+            {
+                parent_pr = Some(pr_url.to_string());
+            }
+        }
+
         drop(commit);
         drop(repo);
 
@@ -332,6 +362,12 @@ impl Git {
             );
         } else {
             message.remove(&MessageSection::PullRequest);
+        }
+
+        if let Some(parent_pr) = parent_pr {
+            message.insert(MessageSection::ParentPr, parent_pr);
+        } else {
+            message.remove(&MessageSection::ParentPr);
         }
 
         Ok(PreparedCommit {
@@ -394,13 +430,20 @@ impl Git {
         commit_oid: Oid,
         master_oid: Oid,
     ) -> Result<Option<Oid>> {
+        self.find_master_base_with(commit_oid, master_oid, &self.repo())
+    }
+    pub fn find_master_base_with(
+        &self,
+        commit_oid: Oid,
+        master_oid: Oid,
+        repo: &Repository,
+    ) -> Result<Option<Oid>> {
         let mut commit_ancestors = HashSet::new();
         let mut commit_oid = Some(commit_oid);
         let mut master_ancestors = HashSet::new();
         let mut master_queue = VecDeque::new();
         master_ancestors.insert(master_oid);
         master_queue.push_back(master_oid);
-        let repo = self.repo();
 
         while !(commit_oid.is_none() && master_queue.is_empty()) {
             if let Some(oid) = commit_oid {
@@ -430,6 +473,20 @@ impl Git {
         }
 
         Ok(None)
+    }
+
+    /// check if commit is an ancestor of target
+    pub fn is_ancestor_with(
+        &self,
+        maybe_ancestor: Oid,
+        maybe_descendant: Oid,
+        repo: &Repository,
+    ) -> Result<bool> {
+        if maybe_ancestor == maybe_descendant {
+            return Ok(true);
+        }
+
+        Ok(repo.graph_descendant_of(maybe_descendant, maybe_ancestor)?)
     }
 
     pub fn create_derived_commit(

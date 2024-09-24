@@ -81,6 +81,23 @@ impl PullRequestUpdate {
             self.body = Some(body);
         }
     }
+
+    pub fn changed(&self) -> String {
+        let mut changes = Vec::new();
+        if let Some(title) = self.title.as_ref() {
+            changes.push(format!("title to '{}'", title));
+        }
+        if let Some(body) = self.body.as_ref() {
+            changes.push(format!("body to '{}'", body));
+        }
+        if let Some(base) = self.base.as_ref() {
+            changes.push(format!("base to '{}'", base));
+        }
+        if let Some(state) = self.state.as_ref() {
+            changes.push(format!("state to '{:?}'", state));
+        }
+        changes.join("\n")
+    }
 }
 
 #[derive(serde::Serialize, Default, Debug)]
@@ -269,7 +286,7 @@ impl GitHub {
             }),
         );
 
-        if review_status == Some(ReviewStatus::Approved) {
+        if review_status == Some(ReviewStatus::Approved) && config.include_reviewed_by {
             sections.insert(
                 MessageSection::ReviewedBy,
                 reviewers

@@ -211,7 +211,7 @@ async fn diff_impl(
             pull_request_updates.update_message(pull_request, message);
 
             if !pull_request_updates.is_empty() {
-                output(
+                let res = output(
                     "⚠️",
                     indoc!(
                         "The Pull Request's title/message differ from the \
@@ -221,7 +221,9 @@ async fn diff_impl(
                          or `spr amend` to go the other way (rewrite the local \
                          commit message with what is on GitHub)."
                     ),
-                )?;
+                );
+                println!("{}", pull_request_updates.changed());
+                res?;
             }
         }
     }

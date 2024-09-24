@@ -21,6 +21,7 @@ pub enum MessageSection {
     Reviewers,
     ReviewedBy,
     PullRequest,
+    ParentPr,
 }
 
 pub fn message_section_label(section: &MessageSection) -> &'static str {
@@ -33,6 +34,7 @@ pub fn message_section_label(section: &MessageSection) -> &'static str {
         Reviewers => "Reviewers",
         ReviewedBy => "Reviewed By",
         PullRequest => "Pull Request",
+        ParentPr => "Parent",
     }
 }
 
@@ -47,6 +49,7 @@ pub fn message_section_by_label(label: &str) -> Option<MessageSection> {
         "reviewers" => Some(Reviewers),
         "reviewed by" => Some(ReviewedBy),
         "pull request" => Some(PullRequest),
+        "parent" => Some(ParentPr),
         _ => None,
     }
 }
@@ -172,6 +175,7 @@ pub fn build_commit_message(section_texts: &MessageSectionsMap) -> String {
             MessageSection::Reviewers,
             MessageSection::ReviewedBy,
             MessageSection::PullRequest,
+            MessageSection::ParentPr,
         ],
     )
 }
@@ -179,7 +183,7 @@ pub fn build_commit_message(section_texts: &MessageSectionsMap) -> String {
 pub fn build_github_body(section_texts: &MessageSectionsMap) -> String {
     build_message(
         section_texts,
-        &[MessageSection::Summary, MessageSection::TestPlan],
+        &[MessageSection::Summary, MessageSection::TestPlan, MessageSection::ParentPr],
     )
 }
 
