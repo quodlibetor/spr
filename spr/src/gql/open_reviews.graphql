@@ -3,10 +3,42 @@ query SearchQuery($query: String!) {
     nodes {
       __typename
       ... on PullRequest {
+        comments(last: 10) {
+          nodes {
+            __typename
+            updatedAt
+            isMinimized
+            minimizedReason
+            viewerDidAuthor
+          }
+        }
+        mergeable
         number
         title
-        url
         reviewDecision
+        # review -> state also gives commented, which is an interesting property.
+        reviews(last: 10) {
+          nodes {
+            __typename
+            state
+            updatedAt
+          }
+        }
+        reviewThreads(last: 100) {  # For code comments
+          nodes {
+            __typename
+            comments(last: 5) {
+              nodes {
+                __typename
+                isMinimized
+                minimizedReason
+                updatedAt
+                viewerDidAuthor
+              }
+            }
+          }
+        }
+        url
       }
     }
   }
