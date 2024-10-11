@@ -22,6 +22,7 @@ pub struct Config {
     pub include_reviewed_by: bool,
     pub require_test_plan: bool,
     pub github_api_base: String,
+    pub cherry_pick: bool,
 }
 
 impl Config {
@@ -33,6 +34,7 @@ impl Config {
         branch_prefix: String,
         require_approval: bool,
         require_test_plan: bool,
+        cherry_pick: bool,
     ) -> Self {
         let master_ref = GitHubBranch::new_from_branch_name(
             &master_branch,
@@ -49,6 +51,7 @@ impl Config {
             require_test_plan,
             github_api_base: "https://api.github.com".to_string(),
             include_reviewed_by: false,
+            cherry_pick,
         }
     }
 
@@ -175,6 +178,7 @@ mod tests {
             "spr/foo/".into(),
             false,
             true,
+            false,
         )
     }
 

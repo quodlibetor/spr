@@ -332,7 +332,7 @@ impl Git {
 
         // get the parent commit's message
         let mut parent_pr = None;
-        if !parent_is_merged {
+        if !parent_is_merged || config.cherry_pick {
             let parent_commit = repo.find_commit(parent_oid)?;
             let parent_message =
                 String::from_utf8_lossy(parent_commit.message_bytes())

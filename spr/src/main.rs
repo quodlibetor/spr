@@ -82,6 +82,21 @@ enum Commands {
     Close(commands::close::CloseOptions),
 }
 
+impl Commands {
+    fn is_cherry_pick(&self) -> bool {
+        match self {
+            Commands::Land(opts) => opts.cherry_pick,
+            Commands::Diff(opts) => opts.cherry_pick,
+            Commands::Amend(_)
+            | Commands::Close(_)
+            | Commands::Format(_)
+            | Commands::Init
+            | Commands::List
+            | Commands::Patch(_) => false,
+        }
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum OptionsError {
     #[error("GitHub repository must be given as 'OWNER/REPO', but given value was '{0}'")]
@@ -155,6 +170,7 @@ pub async fn spr() -> Result<()> {
         branch_prefix,
         require_approval,
         require_test_plan,
+        cli.command.is_cherry_pick(),
     );
 
     let git = spr::git::Git::new(repo);

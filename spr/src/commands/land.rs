@@ -21,7 +21,7 @@ pub struct LandOptions {
     /// Merge a Pull Request that was created or updated with spr diff
     /// --cherry-pick
     #[clap(long)]
-    cherry_pick: bool,
+    pub cherry_pick: bool,
 }
 
 pub async fn land(

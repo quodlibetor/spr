@@ -44,7 +44,7 @@ pub struct DiffOptions {
     /// Submit this commit as if it was cherry-picked on master. Do not base it
     /// on any intermediate changes between the master branch and this commit.
     #[clap(long)]
-    cherry_pick: bool,
+    pub cherry_pick: bool,
 }
 
 pub async fn diff(
